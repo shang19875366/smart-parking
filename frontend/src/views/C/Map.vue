@@ -168,7 +168,7 @@ export default {
     initMap() {
       // 模拟高德地图初始化
       console.log('初始化地图')
-      实际项目中需要引入高德地图SDK并初始化
+    //   实际项目中需要引入高德地图SDK并初始化
       this.map = new AMap.Map('mapContainer', {
         center: [this.userLocation.longitude, this.userLocation.latitude],
         zoom: 15

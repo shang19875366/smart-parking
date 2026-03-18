@@ -24,7 +24,7 @@
           <p class="text-lg text-gray-600 dark:text-gray-300 mb-8">
             实时查看附近停车场位置、收费信息，一键导航，告别停车难问题。
           </p>
-          <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <router-link to="/c/map" class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-blue-600 text-center">
               立即查找
             </router-link>
@@ -34,7 +34,7 @@
           </div>
         </div>
         <div class="md:w-1/2">
-          <img src="https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=smart%20parking%20system%20map%20interface%20with%20parking%20lots%20marked&image_size=landscape_16_9" alt="智慧停车地图" class="rounded-lg shadow-lg w-full">
+          <img src="../../assets/parking.jpg" alt="智慧停车地图" class="rounded-lg shadow-lg w-full">
         </div>
       </div>
     </section>
