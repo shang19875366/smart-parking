@@ -131,6 +131,7 @@
 
 <script>
 import { supabase } from '../../services/supabase'
+import markerIcon from '@/assets/mark_r.png'
 
 export default {
   name: 'CMap',
@@ -155,10 +156,35 @@ export default {
     }
   },
   mounted() {
-    this.initMap()
-    this.fetchParkingLots()
+    this.getUserLocation()
   },
   methods: {
+    getUserLocation() {
+      // 获取用户当前位置
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            this.userLocation = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude
+            }
+            this.initMap()
+            this.fetchParkingLots()
+          },
+          (error) => {
+            console.error('获取位置失败:', error)
+            // 使用默认位置
+            this.initMap()
+            this.fetchParkingLots()
+          }
+        )
+      } else {
+        console.error('浏览器不支持地理定位')
+        // 使用默认位置
+        this.initMap()
+        this.fetchParkingLots()
+      }
+    },
     async fetchParkingLots() {
       try {
         const { data, error } = await supabase
@@ -173,19 +199,23 @@ export default {
           return
         }
         
-        // 计算距离并排序
-        this.parkingLots = data.map(parking => {
-          const distance = this.calculateDistance(
-            this.userLocation.latitude,
-            this.userLocation.longitude,
-            parking.latitude,
-            parking.longitude
-          )
-          return {
-            ...parking,
-            distance: Math.round(distance)
-          }
-        }).sort((a, b) => a.distance - b.distance)
+        // 计算距离并过滤5公里范围内的停车场
+        const maxDistance = 5000; // 5公里
+        this.parkingLots = data
+          .map(parking => {
+            const distance = this.calculateDistance(
+              this.userLocation.latitude,
+              this.userLocation.longitude,
+              parking.latitude,
+              parking.longitude
+            )
+            return {
+              ...parking,
+              distance: Math.round(distance)
+            }
+          })
+          .filter(parking => parking.distance <= maxDistance)
+          .sort((a, b) => a.distance - b.distance)
         
         this.addMarkers()
       } catch (error) {
@@ -215,7 +245,48 @@ export default {
     //   实际项目中需要引入高德地图SDK并初始化
       this.map = new AMap.Map('mapContainer', {
         center: [this.userLocation.longitude, this.userLocation.latitude],
-        zoom: 15
+        zoom: 15,
+        // 添加缩放控件
+        zoomControl: true,
+        // 添加定位控件
+        resizeEnable: true
+      })
+      
+      // 添加用户位置标记
+      const userMarker = new AMap.Marker({
+        position: [this.userLocation.longitude, this.userLocation.latitude],
+        title: '我的位置',
+        icon: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png',
+        map: this.map
+      })
+      this.markers.push(userMarker)
+      
+      // 添加定位控件
+      const geolocation = new AMap.Geolocation({
+        enableHighAccuracy: true, // 是否使用高精度定位，默认:true
+        timeout: 10000, // 超过10秒后停止定位，默认：5s
+        buttonPosition: 'RB', // 定位按钮的位置
+        buttonOffset: new AMap.Pixel(10, 20), // 定位按钮的偏移量
+        zoomToAccuracy: true, // 定位成功后是否自动调整地图视野到定位点
+        showCircle: true // 定位成功后用圆圈表示定位精度范围，默认：true
+      })
+      this.map.addControl(geolocation)
+      
+      // 定位成功回调
+      geolocation.on('complete', (data) => {
+        this.userLocation = {
+          latitude: data.position.getLat(),
+          longitude: data.position.getLng()
+        }
+        // 更新用户位置标记
+        userMarker.setPosition([this.userLocation.longitude, this.userLocation.latitude])
+        // 重新获取停车场数据
+        this.fetchParkingLots()
+      })
+      
+      // 定位失败回调
+      geolocation.on('error', (error) => {
+        console.error('定位失败:', error)
       })
       
       // 添加地图点击事件监听
@@ -228,7 +299,15 @@ export default {
       })
     },
     addMarkers() {
-      // 模拟添加停车场标记
+      // 清除旧的标记（保留用户位置标记）
+      this.markers.forEach((marker, index) => {
+        if (index > 0) { // 保留第一个标记（用户位置）
+          marker.setMap(null)
+        }
+      })
+      this.markers = this.markers.slice(0, 1) // 只保留用户位置标记
+      
+      // 添加停车场标记
       this.parkingLots.forEach(parking => {
         console.log('添加标记:', parking.name)
         // 实际项目中需要使用高德地图API添加标记
