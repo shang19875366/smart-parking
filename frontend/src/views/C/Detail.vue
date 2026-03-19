@@ -41,8 +41,8 @@
             <div class="space-y-4">
               <div v-for="comment in comments" :key="comment.id" class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div class="flex justify-between items-start mb-2">
-                  <h4 class="font-medium text-gray-800 dark:text-white">{{ comment.user }}</h4>
-                  <span class="text-sm text-gray-500 dark:text-gray-400">{{ comment.date }}</span>
+                  <h4 class="font-medium text-gray-800 dark:text-white">{{ comment.user_name }}</h4>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">{{ comment.created_at }}</span>
                 </div>
                 <p class="text-gray-600 dark:text-gray-300">{{ comment.content }}</p>
               </div>
@@ -74,45 +74,67 @@
 </template>
 
 <script>
+import { supabase } from '../../services/supabase'
+
 export default {
   name: 'CDetail',
   data() {
     return {
       parking: {
-        id: 1,
-        name: '中央商场停车场',
-        address: '北京市朝阳区建国路88号',
-        latitude: 39.9042,
-        longitude: 116.4074,
-        fee: 10,
-        phone: '010-12345678'
+        id: '',
+        name: '',
+        address: '',
+        latitude: '',
+        longitude: '',
+        fee: '',
+        phone: ''
       },
-      comments: [
-        {
-          id: 1,
-          user: '张三',
-          date: '2026-03-15',
-          content: '停车场环境不错，收费合理，车位充足。'
-        },
-        {
-          id: 2,
-          user: '李四',
-          date: '2026-03-10',
-          content: '位置很好找，就是高峰期有点挤，建议错峰出行。'
-        },
-        {
-          id: 3,
-          user: '王五',
-          date: '2026-03-05',
-          content: '收费标准有变化，现在是10元/小时，之前是8元。'
-        }
-      ]
+      comments: []
     }
   },
   mounted() {
-    // 实际项目中需要根据路由参数获取停车场详情
     const id = this.$route.params.id
-    console.log('获取停车场详情:', id)
+    this.fetchParkingDetail(id)
+    this.fetchComments(id)
+  },
+  methods: {
+    async fetchParkingDetail(id) {
+      try {
+        const { data, error } = await supabase
+          .from('parking_lots')
+          .select('*')
+          .eq('id', id)
+          .single()
+        
+        if (error) {
+          console.error('获取停车场详情失败:', error)
+          return
+        }
+        
+        this.parking = data
+      } catch (error) {
+        console.error('获取停车场详情异常:', error)
+      }
+    },
+    async fetchComments(id) {
+      try {
+        const { data, error } = await supabase
+          .from('comments')
+          .select('*')
+          .eq('parking_id', id)
+        
+        if (error) {
+          console.error('获取评论数据失败:', error)
+          this.comments = []
+          return
+        }
+        
+        this.comments = data
+      } catch (error) {
+        console.error('获取评论数据异常:', error)
+        this.comments = []
+      }
+    }
   }
 }
 </script>

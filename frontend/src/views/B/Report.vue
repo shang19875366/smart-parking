@@ -47,7 +47,7 @@
             <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.address }}</td>
             <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.latitude }}, {{ report.longitude }}</td>
             <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.fee }}元/小时</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.user }}</td>
+            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.user_name }}</td>
             <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
               <span :class="{
                 'text-warning': report.status === 'pending',
@@ -59,8 +59,8 @@
             </td>
             <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
               <div class="flex gap-2">
-                <button v-if="report.status === 'pending'" class="px-2 py-1 bg-success text-white rounded hover:bg-green-600">通过</button>
-                <button v-if="report.status === 'pending'" class="px-2 py-1 bg-danger text-white rounded hover:bg-red-600">拒绝</button>
+                <button v-if="report.status === 'pending'" class="px-2 py-1 bg-success text-white rounded hover:bg-green-600" @click="approveReport(report.id)">通过</button>
+                <button v-if="report.status === 'pending'" class="px-2 py-1 bg-danger text-white rounded hover:bg-red-600" @click="rejectReport(report.id)">拒绝</button>
                 <button class="px-2 py-1 bg-primary text-white rounded hover:bg-blue-600">查看</button>
               </div>
             </td>
@@ -83,52 +83,82 @@
 </template>
 
 <script>
+import { supabase } from '../../services/supabase'
+
 export default {
   name: 'BReport',
   data() {
     return {
-      reports: [
-        {
-          id: 1,
-          name: '望京SOHO停车场',
-          address: '北京市朝阳区望京SOHO T1',
-          latitude: 39.9988,
-          longitude: 116.4869,
-          fee: 12,
-          user: '张三',
-          status: 'pending'
-        },
-        {
-          id: 2,
-          name: '中关村创业大厦停车场',
-          address: '北京市海淀区中关村大街1号',
-          latitude: 39.9847,
-          longitude: 116.3055,
-          fee: 15,
-          user: '李四',
-          status: 'approved'
-        },
-        {
-          id: 3,
-          name: '北京西站停车场',
-          address: '北京市丰台区莲花池东路',
-          latitude: 39.8947,
-          longitude: 116.3226,
-          fee: 10,
-          user: '王五',
-          status: 'rejected'
-        },
-        {
-          id: 4,
-          name: '朝阳大悦城停车场',
-          address: '北京市朝阳区朝阳北路101号',
-          latitude: 39.9288,
-          longitude: 116.5269,
-          fee: 8,
-          user: '赵六',
-          status: 'pending'
+      reports: []
+    }
+  },
+  mounted() {
+    this.fetchReports()
+  },
+  methods: {
+    async fetchReports() {
+      try {
+        const { data, error } = await supabase
+          .from('user_reports')
+          .select('*')
+        
+        if (error) {
+          console.error('获取上报数据失败:', error)
+          // 直接返回空数组
+          this.reports = []
+          return
         }
-      ]
+        
+        this.reports = data
+      } catch (error) {
+        console.error('获取上报数据异常:', error)
+        // 直接返回空数组
+        this.reports = []
+      }
+    },
+    async approveReport(id) {
+      try {
+        const { data, error } = await supabase
+          .from('user_reports')
+          .update({ status: 'approved' })
+          .eq('id', id)
+          .select()
+        
+        if (error) {
+          console.error('审核通过失败:', error)
+          return
+        }
+        
+        // 更新本地数据
+        const index = this.reports.findIndex(report => report.id === id)
+        if (index !== -1) {
+          this.reports[index].status = 'approved'
+        }
+      } catch (error) {
+        console.error('审核通过异常:', error)
+      }
+    },
+    async rejectReport(id) {
+      try {
+        const { data, error } = await supabase
+          .from('user_reports')
+          .update({ status: 'rejected' })
+          .eq('id', id)
+          .select()
+        
+        if (error) {
+          console.error('拒绝审核失败:', error)
+          return
+        }
+        
+        // 更新本地数据
+        const index = this.reports.findIndex(report => report.id === id)
+        if (index !== -1) {
+          this.reports[index].status = 'rejected'
+        }
+      } catch (error) {
+        console.error('拒绝审核异常:', error)
+      }
     }
   }
 }

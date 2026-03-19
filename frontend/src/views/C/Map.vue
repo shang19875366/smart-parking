@@ -41,6 +41,91 @@
         </div>
       </div>
     </div>
+    <!-- 上报停车场信息弹窗 -->
+    <div v-if="showReportModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-xl font-bold text-gray-800 dark:text-white">上报停车场信息</h2>
+          <button @click="showReportModal = false" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+            ×
+          </button>
+        </div>
+        <form @submit.prevent="submitReport">
+          <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-300 mb-2">停车场名称</label>
+            <input 
+              type="text" 
+              v-model="form.name" 
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+              placeholder="请输入停车场名称"
+              required
+            >
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-300 mb-2">地址</label>
+            <input 
+              type="text" 
+              v-model="form.address" 
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+              placeholder="请输入详细地址"
+              required
+            >
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-gray-700 dark:text-gray-300 mb-2">纬度</label>
+              <input 
+                type="number" 
+                v-model="form.latitude" 
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                placeholder="请输入纬度"
+                step="0.0001"
+                required
+              >
+            </div>
+            <div>
+              <label class="block text-gray-700 dark:text-gray-300 mb-2">经度</label>
+              <input 
+                type="number" 
+                v-model="form.longitude" 
+                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+                placeholder="请输入经度"
+                step="0.0001"
+                required
+              >
+            </div>
+          </div>
+          <div class="mb-4">
+            <label class="block text-gray-700 dark:text-gray-300 mb-2">收费标准（元/小时）</label>
+            <input 
+              type="number" 
+              v-model="form.fee" 
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+              placeholder="请输入收费标准"
+              step="0.5"
+              required
+            >
+          </div>
+          <div class="mb-6">
+            <label class="block text-gray-700 dark:text-gray-300 mb-2">联系电话</label>
+            <input 
+              type="tel" 
+              v-model="form.phone" 
+              class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+              placeholder="请输入联系电话"
+            >
+          </div>
+          <div class="flex justify-center gap-4">
+            <button type="button" @click="showReportModal = false" class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600">
+              取消
+            </button>
+            <button type="submit" class="px-6 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">
+              提交上报
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -57,6 +142,15 @@ export default {
       userLocation: {
         latitude: 39.9042,
         longitude: 116.4074
+      },
+      showReportModal: false,
+      form: {
+        name: '',
+        address: '',
+        latitude: '',
+        longitude: '',
+        fee: '',
+        phone: ''
       }
     }
   },
@@ -74,8 +168,8 @@ export default {
         
         if (error) {
           console.error('获取停车场数据失败:', error)
-          // 使用模拟数据作为 fallback
-          this.useMockData()
+          // 直接返回空数组
+          this.parkingLots = []
           return
         }
         
@@ -96,59 +190,9 @@ export default {
         this.addMarkers()
       } catch (error) {
         console.error('获取停车场数据异常:', error)
-        this.useMockData()
+        // 直接返回空数组
+        this.parkingLots = []
       }
-    },
-    useMockData() {
-      // 模拟数据
-      this.parkingLots = [
-        {
-          id: 1,
-          name: '中央商场停车场',
-          address: '北京市朝阳区建国路88号',
-          latitude: 39.9042,
-          longitude: 116.4074,
-          fee: 10,
-          distance: 500
-        },
-        {
-          id: 2,
-          name: '国贸中心停车场',
-          address: '北京市朝阳区建国门外大街1号',
-          latitude: 39.9075,
-          longitude: 116.4668,
-          fee: 15,
-          distance: 1200
-        },
-        {
-          id: 3,
-          name: '三里屯SOHO停车场',
-          address: '北京市朝阳区三里屯路19号',
-          latitude: 39.9342,
-          longitude: 116.4531,
-          fee: 12,
-          distance: 2000
-        },
-        {
-          id: 4,
-          name: '朝阳公园停车场',
-          address: '北京市朝阳区朝阳公园路1号',
-          latitude: 39.9388,
-          longitude: 116.4869,
-          fee: 8,
-          distance: 3500
-        },
-        {
-          id: 5,
-          name: '北京SKP停车场',
-          address: '北京市朝阳区建国路87号',
-          latitude: 39.9047,
-          longitude: 116.4652,
-          fee: 20,
-          distance: 800
-        }
-      ]
-      this.addMarkers()
     },
     calculateDistance(lat1, lon1, lat2, lon2) {
       // 计算两点之间的距离（米）
@@ -173,6 +217,15 @@ export default {
         center: [this.userLocation.longitude, this.userLocation.latitude],
         zoom: 15
       })
+      
+      // 添加地图点击事件监听
+      this.map.on('click', (e) => {
+        // 自动填充经纬度
+        this.form.latitude = e.lnglat.getLat()
+        this.form.longitude = e.lnglat.getLng()
+        // 显示上报表单
+        this.showReportModal = true
+      })
     },
     addMarkers() {
       // 模拟添加停车场标记
@@ -190,6 +243,50 @@ export default {
     showParkingDetail(parking) {
       // 跳转到停车场详情页
       this.$router.push(`/c/detail/${parking.id}`)
+    },
+    async submitReport() {
+      try {
+        const { data, error } = await supabase
+          .from('user_reports')
+          .insert({
+            name: this.form.name,
+            address: this.form.address,
+            latitude: parseFloat(this.form.latitude),
+            longitude: parseFloat(this.form.longitude),
+            fee: parseFloat(this.form.fee),
+            phone: this.form.phone,
+            user_name: '测试用户', // 实际项目中应该从认证系统获取
+            status: 'pending'
+          })
+          .select()
+        
+        if (error) {
+          console.error('提交上报失败:', error)
+          alert('提交失败，请重试')
+          return
+        }
+        
+        // 成功提示
+        alert('上报成功，等待审核')
+        // 重置表单并关闭弹窗
+        this.resetForm()
+        this.showReportModal = false
+        // 重新获取停车场数据
+        this.fetchParkingLots()
+      } catch (error) {
+        console.error('提交上报异常:', error)
+        alert('提交失败，请重试')
+      }
+    },
+    resetForm() {
+      this.form = {
+        name: '',
+        address: '',
+        latitude: '',
+        longitude: '',
+        fee: '',
+        phone: ''
+      }
     }
   }
 }

@@ -31,8 +31,8 @@
               </span>
             </td>
             <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ item.content }}</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ item.user }}</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ item.time }}</td>
+            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ item.user_name }}</td>
+            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ item.created_at }}</td>
             <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
               <span :class="{
                 'text-warning': item.status === 'pending',
@@ -44,8 +44,8 @@
             </td>
             <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
               <div class="flex gap-2">
-                <button v-if="item.status === 'pending'" class="px-2 py-1 bg-success text-white rounded hover:bg-green-600">通过</button>
-                <button v-if="item.status === 'pending'" class="px-2 py-1 bg-danger text-white rounded hover:bg-red-600">拒绝</button>
+                <button v-if="item.status === 'pending'" class="px-2 py-1 bg-success text-white rounded hover:bg-green-600" @click="approveAudit(item.id)">通过</button>
+                <button v-if="item.status === 'pending'" class="px-2 py-1 bg-danger text-white rounded hover:bg-red-600" @click="rejectAudit(item.id)">拒绝</button>
                 <button class="px-2 py-1 bg-primary text-white rounded hover:bg-blue-600">查看</button>
               </div>
             </td>
@@ -68,52 +68,82 @@
 </template>
 
 <script>
+import { supabase } from '../../services/supabase'
+
 export default {
   name: 'BAudit',
   data() {
     return {
-      auditItems: [
-        {
-          id: 1,
-          type: 'parking',
-          content: '望京SOHO停车场 - 北京市朝阳区望京SOHO T1',
-          user: '张三',
-          time: '2026-03-18 10:00',
-          status: 'pending'
-        },
-        {
-          id: 2,
-          type: 'fee',
-          content: '中央商场停车场 - 收费标准变更为12元/小时',
-          user: '李四',
-          time: '2026-03-18 09:30',
-          status: 'pending'
-        },
-        {
-          id: 3,
-          type: 'parking',
-          content: '中关村创业大厦停车场 - 北京市海淀区中关村大街1号',
-          user: '王五',
-          time: '2026-03-17 16:00',
-          status: 'approved'
-        },
-        {
-          id: 4,
-          type: 'fee',
-          content: '国贸中心停车场 - 收费标准变更为18元/小时',
-          user: '赵六',
-          time: '2026-03-17 14:30',
-          status: 'rejected'
-        },
-        {
-          id: 5,
-          type: 'parking',
-          content: '朝阳大悦城停车场 - 北京市朝阳区朝阳北路101号',
-          user: '孙七',
-          time: '2026-03-16 11:00',
-          status: 'pending'
+      auditItems: []
+    }
+  },
+  mounted() {
+    this.fetchAuditItems()
+  },
+  methods: {
+    async fetchAuditItems() {
+      try {
+        const { data, error } = await supabase
+          .from('audits')
+          .select('*')
+        
+        if (error) {
+          console.error('获取审核数据失败:', error)
+          // 直接返回空数组
+          this.auditItems = []
+          return
         }
-      ]
+        
+        this.auditItems = data
+      } catch (error) {
+        console.error('获取审核数据异常:', error)
+        // 直接返回空数组
+        this.auditItems = []
+      }
+    },
+    async approveAudit(id) {
+      try {
+        const { data, error } = await supabase
+          .from('audits')
+          .update({ status: 'approved' })
+          .eq('id', id)
+          .select()
+        
+        if (error) {
+          console.error('审核通过失败:', error)
+          return
+        }
+        
+        // 更新本地数据
+        const index = this.auditItems.findIndex(item => item.id === id)
+        if (index !== -1) {
+          this.auditItems[index].status = 'approved'
+        }
+      } catch (error) {
+        console.error('审核通过异常:', error)
+      }
+    },
+    async rejectAudit(id) {
+      try {
+        const { data, error } = await supabase
+          .from('audits')
+          .update({ status: 'rejected' })
+          .eq('id', id)
+          .select()
+        
+        if (error) {
+          console.error('拒绝审核失败:', error)
+          return
+        }
+        
+        // 更新本地数据
+        const index = this.auditItems.findIndex(item => item.id === id)
+        if (index !== -1) {
+          this.auditItems[index].status = 'rejected'
+        }
+      } catch (error) {
+        console.error('拒绝审核异常:', error)
+      }
     }
   }
 }

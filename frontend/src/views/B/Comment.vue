@@ -30,16 +30,16 @@
       <div v-for="comment in comments" :key="comment.id" class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg">
         <div class="flex justify-between items-start mb-2">
           <div>
-            <h4 class="font-medium text-gray-800 dark:text-white">{{ comment.user }}</h4>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ comment.date }}</p>
+            <h4 class="font-medium text-gray-800 dark:text-white">{{ comment.user_name }}</h4>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ comment.created_at }}</p>
           </div>
           <div class="flex gap-2">
-            <button class="px-2 py-1 bg-danger text-white rounded hover:bg-red-600">删除</button>
+            <button class="px-2 py-1 bg-danger text-white rounded hover:bg-red-600" @click="deleteComment(comment.id)">删除</button>
           </div>
         </div>
         <p class="text-gray-600 dark:text-gray-300 mb-2">{{ comment.content }}</p>
         <div class="text-sm text-gray-500 dark:text-gray-400">
-          停车场：{{ comment.parkingName }}
+          停车场：{{ comment.parking_name || '未知' }}
         </div>
       </div>
     </div>
@@ -58,47 +58,56 @@
 </template>
 
 <script>
+import { supabase } from '../../services/supabase'
+
 export default {
   name: 'BComment',
   data() {
     return {
-      comments: [
-        {
-          id: 1,
-          user: '张三',
-          date: '2026-03-15',
-          content: '停车场环境不错，收费合理，车位充足。',
-          parkingName: '中央商场停车场'
-        },
-        {
-          id: 2,
-          user: '李四',
-          date: '2026-03-10',
-          content: '位置很好找，就是高峰期有点挤，建议错峰出行。',
-          parkingName: '国贸中心停车场'
-        },
-        {
-          id: 3,
-          user: '王五',
-          date: '2026-03-05',
-          content: '收费标准有变化，现在是10元/小时，之前是8元。',
-          parkingName: '中央商场停车场'
-        },
-        {
-          id: 4,
-          user: '赵六',
-          date: '2026-03-01',
-          content: '停车场卫生状况不太好，希望能改进。',
-          parkingName: '三里屯SOHO停车场'
-        },
-        {
-          id: 5,
-          user: '孙七',
-          date: '2026-02-28',
-          content: '服务态度很好，车位引导员很专业。',
-          parkingName: '国贸中心停车场'
+      comments: []
+    }
+  },
+  mounted() {
+    this.fetchComments()
+  },
+  methods: {
+    async fetchComments() {
+      try {
+        const { data, error } = await supabase
+          .from('comments')
+          .select('*')
+        
+        if (error) {
+          console.error('获取评论数据失败:', error)
+          // 直接返回空数组
+          this.comments = []
+          return
         }
-      ]
+        
+        this.comments = data
+      } catch (error) {
+        console.error('获取评论数据异常:', error)
+        // 直接返回空数组
+        this.comments = []
+      }
+    },
+    async deleteComment(id) {
+      try {
+        const { data, error } = await supabase
+          .from('comments')
+          .delete()
+          .eq('id', id)
+        
+        if (error) {
+          console.error('删除评论失败:', error)
+          return
+        }
+        
+        // 更新本地数据
+        this.comments = this.comments.filter(comment => comment.id !== id)
+      } catch (error) {
+        console.error('删除评论异常:', error)
+      }
     }
   }
 }

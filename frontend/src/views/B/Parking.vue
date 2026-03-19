@@ -78,57 +78,38 @@
 </template>
 
 <script>
+import { supabase } from '../../services/supabase'
+
 export default {
   name: 'BParking',
   data() {
     return {
-      parkingLots: [
-        {
-          id: 1,
-          name: '中央商场停车场',
-          address: '北京市朝阳区建国路88号',
-          latitude: 39.9042,
-          longitude: 116.4074,
-          fee: 10,
-          status: 'active'
-        },
-        {
-          id: 2,
-          name: '国贸中心停车场',
-          address: '北京市朝阳区建国门外大街1号',
-          latitude: 39.9075,
-          longitude: 116.4668,
-          fee: 15,
-          status: 'active'
-        },
-        {
-          id: 3,
-          name: '三里屯SOHO停车场',
-          address: '北京市朝阳区三里屯路19号',
-          latitude: 39.9342,
-          longitude: 116.4531,
-          fee: 12,
-          status: 'active'
-        },
-        {
-          id: 4,
-          name: '朝阳公园停车场',
-          address: '北京市朝阳区朝阳公园路1号',
-          latitude: 39.9388,
-          longitude: 116.4869,
-          fee: 8,
-          status: 'inactive'
-        },
-        {
-          id: 5,
-          name: '北京SKP停车场',
-          address: '北京市朝阳区建国路87号',
-          latitude: 39.9047,
-          longitude: 116.4652,
-          fee: 20,
-          status: 'active'
+      parkingLots: []
+    }
+  },
+  mounted() {
+    this.fetchParkingLots()
+  },
+  methods: {
+    async fetchParkingLots() {
+      try {
+        const { data, error } = await supabase
+          .from('parking_lots')
+          .select('*')
+        
+        if (error) {
+          console.error('获取停车场数据失败:', error)
+          // 直接返回空数组
+          this.parkingLots = []
+          return
         }
-      ]
+        
+        this.parkingLots = data
+      } catch (error) {
+        console.error('获取停车场数据异常:', error)
+        // 直接返回空数组
+        this.parkingLots = []
+      }
     }
   }
 }
