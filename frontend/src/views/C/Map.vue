@@ -256,7 +256,7 @@ export default {
       const userMarker = new AMap.Marker({
         position: [this.userLocation.longitude, this.userLocation.latitude],
         title: '我的位置',
-        icon: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png',
+        icon: markerIcon,
         map: this.map
       })
       this.markers.push(userMarker)
