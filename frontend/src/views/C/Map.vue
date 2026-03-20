@@ -131,7 +131,6 @@
 
 <script>
 import { supabase } from '../../services/supabase'
-import markerIcon from '@/assets/mark_r.png'
 
 export default {
   name: 'CMap',
@@ -256,7 +255,11 @@ export default {
       const userMarker = new AMap.Marker({
         position: [this.userLocation.longitude, this.userLocation.latitude],
         title: '我的位置',
-        icon: markerIcon,
+        icon: new AMap.Icon({
+          size: new AMap.Size(20, 20),
+          image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_r.png',
+          imageSize: new AMap.Size(20, 20)
+        }),
         map: this.map
       })
       this.markers.push(userMarker)
