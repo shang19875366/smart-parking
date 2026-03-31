@@ -1,6 +1,12 @@
 {
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist",
+  "root": "frontend",
+  "build": {
+    "command": "npm run build",
+    "outputDirectory": "dist",
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
