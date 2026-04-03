@@ -5,163 +5,168 @@
     </div>
     <!-- 搜索和筛选 -->
     <div class="flex flex-col md:flex-row gap-4 mb-6">
-      <div class="flex-1 relative">
-        <input 
-          type="text" 
+      <div class="flex-1">
+        <el-input 
+          v-model="searchQuery" 
           placeholder="搜索上报信息..." 
-          class="w-full px-4 py-2 pl-10 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-        >
-        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+          prefix-icon="el-icon-search"
+        />
       </div>
       <div class="flex gap-4">
-        <select class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-          <option value="">全部状态</option>
-          <option value="pending">待审核</option>
-          <option value="approved">已通过</option>
-          <option value="rejected">已拒绝</option>
-        </select>
-        <button class="px-4 py-2 bg-secondary text-white rounded-lg hover:bg-gray-700">
-          筛选
-        </button>
+        <el-select v-model="statusFilter" placeholder="状态">
+          <el-option label="全部状态" value="" />
+          <el-option label="待审核" value="pending" />
+          <el-option label="已通过" value="approved" />
+          <el-option label="已拒绝" value="rejected" />
+        </el-select>
+        <el-button type="success">筛选</el-button>
       </div>
     </div>
     <!-- 上报列表 -->
-    <div class="overflow-x-auto">
-      <table class="w-full text-left">
-        <thead class="bg-gray-100 dark:bg-gray-700">
-          <tr>
-            <th class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">ID</th>
-            <th class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">停车场名称</th>
-            <th class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">地址</th>
-            <th class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">经纬度</th>
-            <th class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">收费标准</th>
-            <th class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">上报人</th>
-            <th class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">状态</th>
-            <th class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="report in reports" :key="report.id" class="hover:bg-gray-50 dark:hover:bg-gray-700">
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.id }}</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.name }}</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.address }}</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.latitude }}, {{ report.longitude }}</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.fee }}元/小时</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">{{ report.user_name }}</td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
-              <span :class="{
-                'text-warning': report.status === 'pending',
-                'text-success': report.status === 'approved',
-                'text-danger': report.status === 'rejected'
-              }">
-                {{ report.status === 'pending' ? '待审核' : report.status === 'approved' ? '已通过' : '已拒绝' }}
-              </span>
-            </td>
-            <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-600">
-              <div class="flex gap-2">
-                <button v-if="report.status === 'pending'" class="px-2 py-1 bg-success text-white rounded hover:bg-green-600" @click="approveReport(report.id)">通过</button>
-                <button v-if="report.status === 'pending'" class="px-2 py-1 bg-danger text-white rounded hover:bg-red-600" @click="rejectReport(report.id)">拒绝</button>
-                <button class="px-2 py-1 bg-primary text-white rounded hover:bg-blue-600">查看</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <el-table :data="reports" style="width: 100%">
+      <el-table-column prop="id" label="ID" />
+      <el-table-column prop="name" label="停车场名称" />
+      <el-table-column prop="address" label="地址" />
+      <el-table-column label="经纬度">
+        <template #default="scope">
+          {{ scope.row.latitude }}, {{ scope.row.longitude }}
+        </template>
+      </el-table-column>
+      <el-table-column label="收费标准">
+        <template #default="scope">
+          {{ scope.row.fee }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="user_name" label="上报人" />
+      <el-table-column label="状态">
+        <template #default="scope">
+          <el-tag :type="getTagType(scope.row.status)">
+            {{ getStatusText(scope.row.status) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作">
+        <template #default="scope">
+          <div class="flex gap-2">
+            <el-button v-if="scope.row.status === 'pending'" type="success" size="small" @click="approveReport(scope.row.id)">通过</el-button>
+            <el-button v-if="scope.row.status === 'pending'" type="danger" size="small" @click="rejectReport(scope.row.id)">拒绝</el-button>
+            <el-button type="primary" size="small">查看</el-button>
+          </div>
+        </template>
+      </el-table-column>
+    </el-table>
     <!-- 分页 -->
     <div class="flex justify-between items-center mt-6">
       <p class="text-gray-600 dark:text-gray-400">共 {{ reports.length }} 条记录</p>
-      <div class="flex gap-2">
-        <button class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">上一页</button>
-        <button class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-primary text-white">1</button>
-        <button class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">2</button>
-        <button class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">3</button>
-        <button class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200">下一页</button>
-      </div>
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="reports.length"
+      />
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
 import { supabase } from '../../services/supabase'
 
-export default {
-  name: 'BReport',
-  data() {
-    return {
-      reports: []
+const reports = ref([])
+const searchQuery = ref('')
+const statusFilter = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+const fetchReports = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('user_reports')
+      .select('*')
+    
+    if (error) {
+      console.error('获取上报数据失败:', error)
+      // 直接返回空数组
+      reports.value = []
+      return
     }
-  },
-  mounted() {
-    this.fetchReports()
-  },
-  methods: {
-    async fetchReports() {
-      try {
-        const { data, error } = await supabase
-          .from('user_reports')
-          .select('*')
-        
-        if (error) {
-          console.error('获取上报数据失败:', error)
-          // 直接返回空数组
-          this.reports = []
-          return
-        }
-        
-        this.reports = data
-      } catch (error) {
-        console.error('获取上报数据异常:', error)
-        // 直接返回空数组
-        this.reports = []
-      }
-    },
-    async approveReport(id) {
-      try {
-        const { data, error } = await supabase
-          .from('user_reports')
-          .update({ status: 'approved' })
-          .eq('id', id)
-          .select()
-        
-        if (error) {
-          console.error('审核通过失败:', error)
-          return
-        }
-        
-        // 更新本地数据
-        const index = this.reports.findIndex(report => report.id === id)
-        if (index !== -1) {
-          this.reports[index].status = 'approved'
-        }
-      } catch (error) {
-        console.error('审核通过异常:', error)
-      }
-    },
-    async rejectReport(id) {
-      try {
-        const { data, error } = await supabase
-          .from('user_reports')
-          .update({ status: 'rejected' })
-          .eq('id', id)
-          .select()
-        
-        if (error) {
-          console.error('拒绝审核失败:', error)
-          return
-        }
-        
-        // 更新本地数据
-        const index = this.reports.findIndex(report => report.id === id)
-        if (index !== -1) {
-          this.reports[index].status = 'rejected'
-        }
-      } catch (error) {
-        console.error('拒绝审核异常:', error)
-      }
-    }
+    
+    reports.value = data
+  } catch (error) {
+    console.error('获取上报数据异常:', error)
+    // 直接返回空数组
+    reports.value = []
   }
 }
+
+const approveReport = async (id) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_reports')
+      .update({ status: 'approved' })
+      .eq('id', id)
+      .select()
+    
+    if (error) {
+      console.error('审核通过失败:', error)
+      return
+    }
+    
+    // 更新本地数据
+    const index = reports.value.findIndex(report => report.id === id)
+    if (index !== -1) {
+      reports.value[index].status = 'approved'
+    }
+  } catch (error) {
+    console.error('审核通过异常:', error)
+  }
+}
+
+const rejectReport = async (id) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_reports')
+      .update({ status: 'rejected' })
+      .eq('id', id)
+      .select()
+    
+    if (error) {
+      console.error('拒绝审核失败:', error)
+      return
+    }
+    
+    // 更新本地数据
+    const index = reports.value.findIndex(report => report.id === id)
+    if (index !== -1) {
+      reports.value[index].status = 'rejected'
+    }
+  } catch (error) {
+    console.error('拒绝审核异常:', error)
+  }
+}
+
+const getTagType = (status) => {
+  switch (status) {
+    case 'pending': return 'warning'
+    case 'approved': return 'success'
+    case 'rejected': return 'danger'
+    default: return ''
+  }
+}
+
+const getStatusText = (status) => {
+  switch (status) {
+    case 'pending': return '待审核'
+    case 'approved': return '已通过'
+    case 'rejected': return '已拒绝'
+    default: return status
+  }
+}
+
+onMounted(() => {
+  fetchReports()
+})
 </script>
 
 <style scoped>

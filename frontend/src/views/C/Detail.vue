@@ -3,9 +3,7 @@
     <!-- 顶部导航 -->
     <header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-10">
       <div class="container mx-auto px-4 py-4 flex items-center">
-        <button @click="$router.back()" class="mr-4">
-          <span class="text-xl">←</span>
-        </button>
+        <el-button @click="router.back()" icon="ArrowLeft" circle></el-button>
         <h1 class="text-xl font-bold text-gray-800 dark:text-white">{{ parking.name }}</h1>
       </div>
     </header>
@@ -14,7 +12,7 @@
       <div class="flex flex-col md:flex-row gap-6">
         <!-- 左侧信息 -->
         <div class="md:w-2/3">
-          <div class="mb-6">
+          <el-card shadow="hover" class="mb-6">
             <h2 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">{{ parking.name }}</h2>
             <p class="text-gray-600 dark:text-gray-400 mb-4">{{ parking.address }}</p>
             <div class="flex items-center mb-4">
@@ -29,114 +27,154 @@
               <span class="text-primary mr-2">📞</span>
               <span class="text-gray-800 dark:text-white">{{ parking.phone || '暂无联系电话' }}</span>
             </div>
-          </div>
+          </el-card>
           <div class="mb-6">
-            <button class="w-full px-4 py-3 bg-primary text-white rounded-lg hover:bg-blue-600">
+            <el-button type="primary" size="large" class="w-full" @click="navigateToParking">
               导航到这里
-            </button>
+            </el-button>
           </div>
           <!-- 评论区域 -->
           <div>
             <h3 class="text-xl font-semibold mb-4 text-gray-800 dark:text-white">用户评论</h3>
             <div class="space-y-4">
-              <div v-for="comment in comments" :key="comment.id" class="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <el-card v-for="comment in comments" :key="comment.id" shadow="hover">
                 <div class="flex justify-between items-start mb-2">
                   <h4 class="font-medium text-gray-800 dark:text-white">{{ comment.user_name }}</h4>
                   <span class="text-sm text-gray-500 dark:text-gray-400">{{ comment.created_at }}</span>
                 </div>
                 <p class="text-gray-600 dark:text-gray-300">{{ comment.content }}</p>
+              </el-card>
+              <div v-if="comments.length === 0" class="text-center py-4 text-gray-500">
+                暂无评论
               </div>
             </div>
             <!-- 评论输入框 -->
             <div class="mt-6">
-              <textarea 
-                placeholder="写下你的评论..." 
-                class="w-full p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 resize-none"
-                rows="3"
-              ></textarea>
+              <el-input
+                v-model="commentContent"
+                type="textarea"
+                placeholder="写下你的评论..."
+                :rows="3"
+              />
               <div class="mt-3 flex justify-end">
-                <button class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600">
+                <el-button type="primary" @click="submitComment">
                   提交评论
-                </button>
+                </el-button>
               </div>
             </div>
           </div>
         </div>
         <!-- 右侧地图 -->
         <div class="md:w-1/3">
-          <div class="bg-gray-200 dark:bg-gray-700 rounded-lg h-64 flex items-center justify-center">
+          <el-card shadow="hover" class="h-64 flex items-center justify-center">
             <span class="text-gray-500 dark:text-gray-400">地图显示区域</span>
-          </div>
+          </el-card>
         </div>
       </div>
     </section>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '../../services/supabase'
 
-export default {
-  name: 'CDetail',
-  data() {
-    return {
-      parking: {
-        id: '',
-        name: '',
-        address: '',
-        latitude: '',
-        longitude: '',
-        fee: '',
-        phone: ''
-      },
-      comments: []
+const router = useRouter()
+const route = useRoute()
+
+const parking = ref({
+  id: '',
+  name: '',
+  address: '',
+  latitude: '',
+  longitude: '',
+  fee: '',
+  phone: ''
+})
+const comments = ref([])
+const commentContent = ref('')
+
+const fetchParkingDetail = async (id) => {
+  try {
+    const { data, error } = await supabase
+      .from('parking_lots')
+      .select('*')
+      .eq('id', id)
+      .single()
+    
+    if (error) {
+      console.error('获取停车场详情失败:', error)
+      return
     }
-  },
-  mounted() {
-    const id = this.$route.params.id
-    this.fetchParkingDetail(id)
-    this.fetchComments(id)
-  },
-  methods: {
-    async fetchParkingDetail(id) {
-      try {
-        const { data, error } = await supabase
-          .from('parking_lots')
-          .select('*')
-          .eq('id', id)
-          .single()
-        
-        if (error) {
-          console.error('获取停车场详情失败:', error)
-          return
-        }
-        
-        this.parking = data
-      } catch (error) {
-        console.error('获取停车场详情异常:', error)
-      }
-    },
-    async fetchComments(id) {
-      try {
-        const { data, error } = await supabase
-          .from('comments')
-          .select('*')
-          .eq('parking_id', id)
-        
-        if (error) {
-          console.error('获取评论数据失败:', error)
-          this.comments = []
-          return
-        }
-        
-        this.comments = data
-      } catch (error) {
-        console.error('获取评论数据异常:', error)
-        this.comments = []
-      }
-    }
+    
+    parking.value = data
+  } catch (error) {
+    console.error('获取停车场详情异常:', error)
   }
 }
+
+const fetchComments = async (id) => {
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('parking_id', id)
+    
+    if (error) {
+      console.error('获取评论数据失败:', error)
+      comments.value = []
+      return
+    }
+    
+    comments.value = data
+  } catch (error) {
+    console.error('获取评论数据异常:', error)
+    comments.value = []
+  }
+}
+
+const navigateToParking = () => {
+  // 导航功能实现
+  console.log('导航到:', parking.value.name)
+  // 这里可以添加导航逻辑
+}
+
+const submitComment = async () => {
+  if (!commentContent.value.trim()) {
+    return
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        parking_id: parking.value.id,
+        user_name: '测试用户', // 实际项目中应该从认证系统获取
+        content: commentContent.value,
+        status: 'active'
+      })
+      .select()
+    
+    if (error) {
+      console.error('提交评论失败:', error)
+      return
+    }
+    
+    // 重新获取评论
+    fetchComments(parking.value.id)
+    // 清空输入框
+    commentContent.value = ''
+  } catch (error) {
+    console.error('提交评论异常:', error)
+  }
+}
+
+onMounted(() => {
+  const id = route.params.id
+  fetchParkingDetail(id)
+  fetchComments(id)
+})
 </script>
 
 <style scoped>

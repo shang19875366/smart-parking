@@ -24,10 +24,8 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'CLayout'
-}
+<script setup>
+// C端布局组件
 </script>
 
 <style scoped>

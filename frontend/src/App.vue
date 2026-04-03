@@ -2,10 +2,8 @@
   <router-view />
 </template>
 
-<script>
-export default {
-  name: 'App'
-}
+<script setup>
+// App组件
 </script>
 
 <style>

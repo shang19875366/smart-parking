@@ -55,20 +55,12 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 
-export default {
-  name: 'BLayout',
-  setup() {
-    const route = useRoute()
-    const currentRoute = computed(() => route)
-    return {
-      currentRoute
-    }
-  }
-}
+const route = useRoute()
+const currentRoute = computed(() => route)
 </script>
 
 <style scoped>
