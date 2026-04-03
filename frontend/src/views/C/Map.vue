@@ -117,7 +117,7 @@
                 >经度</label
               >
               <input
-                type="number"
+                type="text"
                 v-model="form.longitude"
                 class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
                 placeholder="请输入经度"
@@ -131,7 +131,7 @@
               >收费标准（元/小时）</label
             >
             <input
-              type="number"
+              type="text"
               v-model="form.fee"
               class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
               placeholder="请输入收费标准"
